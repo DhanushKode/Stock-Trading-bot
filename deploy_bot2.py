@@ -14,7 +14,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 
 # Streamlit UI
-st.title("📈 ML-Powered Stock Trading Bot")
+st.title("📈 AI - Stock Trading Bot")
 
 # User Inputs
 alpaca_api_key = st.text_input("Alpaca API Key", type="password")
