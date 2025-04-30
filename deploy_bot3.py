@@ -8,7 +8,7 @@ import time
 
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go  # Depends on 'plotly' in requirements.txt
+import plotly.graph_objects as go
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
@@ -22,17 +22,17 @@ from sklearn.model_selection import train_test_split
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Function to get Base64 string from MP4 (with caching)
-@st.cache_data
-def get_base64_of_file(file_path):
-    try:
-        with open(file_path, "rb") as video_file:
-            encoded_string = base64.b64encode(video_file.read()).decode("utf-8")
-        logger.info("Successfully encoded MP4 to Base64")
-        return encoded_string
-    except Exception as e:
-        logger.error(f"Failed to encode MP4: {e}")
-        raise
+# Function to get Base64 string from MP4 (with caching) - Disabled for URL approach
+# @st.cache_data
+# def get_base64_of_file(file_path):
+#     try:
+#         with open(file_path, "rb") as video_file:
+#             encoded_string = base64.b64encode(video_file.read()).decode("utf-8")
+#         logger.info("Successfully encoded MP4 to Base64")
+#         return encoded_string
+#     except Exception as e:
+#         logger.error(f"Failed to encode MP4: {e}")
+#         raise
 
 # Fetch Tiingo Data
 def fetch_tiingo_data(symbol, api_key, start_date, end_date):
@@ -118,7 +118,7 @@ def get_current_price(symbol, api_key, secret_key, status_queue, last_price=None
             time.sleep(2 ** attempt)
     return None, last_successful_price
 
-# Place Order - Optimized for execution
+# Place Order - Updated to fix wash trade error by increasing sell price margin
 def place_order(trading_client, symbol, qty, side, limit_price, status_queue):
     if limit_price <= 0:
         status_queue.put(f"❌ Invalid limit price: {limit_price}")
@@ -126,9 +126,9 @@ def place_order(trading_client, symbol, qty, side, limit_price, status_queue):
         return False
     try:
         if side == OrderSide.BUY:
-            limit_price = round(limit_price * 0.998, 2)
+            limit_price = round(limit_price * 0.998, 2)  # 0.2% below for buy
         else:
-            limit_price = round(limit_price * 1.002, 2)
+            limit_price = round(limit_price * 1.01, 2)  # Increased to 1% above for sell to avoid wash trade
         order = LimitOrderRequest(
             symbol=symbol,
             qty=qty,
@@ -533,16 +533,7 @@ def trading_bot_page():
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-# Load the MP4 file (cached) - Disabled for deployment due to path issues on Streamlit Cloud
-# To enable, place the MP4 in 'assets/stock-market-price-chart.mp4' and uncomment the below lines
-# try:
-#     mp4_base64 = get_base64_of_file("assets/stock-market-price-chart.mp4")
-# except Exception as e:
-#     st.error(f"Failed to load MP4 file: {e}")
-#     mp4_base64 = ""
-mp4_base64 = ""  # Temporary fallback to avoid path issues
-
-# Custom CSS and HTML for Video Background and Adjusted Layout
+# Custom CSS and HTML for Video Background - Using External URL
 common_css = f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] > .stApp {{
@@ -634,7 +625,7 @@ common_css = f"""
     }}
     </style>
     <video autoplay muted loop class="video-background">
-        <source src="data:video/mp4;base64,{mp4_base64}" type="video/mp4">
+        <source src="https://github.com/DhanushKode/Stock-Trading-bot/blob/main/project%20backgorund%20.mp4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
 """
