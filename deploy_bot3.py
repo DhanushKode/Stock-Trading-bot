@@ -533,7 +533,7 @@ def trading_bot_page():
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-# Custom CSS and HTML for Video Background - Using External URL
+# Custom CSS and HTML for Video Background - Updated with GitHub URL
 common_css = f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] > .stApp {{
@@ -625,7 +625,7 @@ common_css = f"""
     }}
     </style>
     <video autoplay muted loop class="video-background">
-        <source src="https://github.com/DhanushKode/Stock-Trading-bot/blob/main/project%20backgorund%20.mp4" type="video/mp4">
+        <source src="https://raw.githubusercontent.com/your-username/stock-trading-bot/main/assets/stock-market-price-chart.mp4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
 """
