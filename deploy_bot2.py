@@ -533,7 +533,7 @@ def trading_bot_page():
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-# Load the MP4 file (cached) - Disabled for deployment
+# Load the MP4 file (cached) - Disabled for deployment due to path issues
 # try:
 #     mp4_base64 = get_base64_of_file(r"C:\Users\HP\Downloads\BOT PROJECT\stock-market-price-chart.mp4")
 # except Exception as e:
