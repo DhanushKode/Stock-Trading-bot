@@ -8,7 +8,7 @@ import time
 
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
+import plotly.graph_objects as go  # Ensure this works with requirements.txt
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
@@ -533,13 +533,14 @@ def trading_bot_page():
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-# Load the MP4 file (cached) - Disabled for deployment due to path issues
+# Load the MP4 file (cached) - Disabled for deployment due to path issues on Streamlit Cloud
+# To enable, place the MP4 in 'assets/stock-market-price-chart.mp4' and uncomment the below lines
 # try:
-#     mp4_base64 = get_base64_of_file(r"C:\Users\HP\Downloads\BOT PROJECT\stock-market-price-chart.mp4")
+#     mp4_base64 = get_base64_of_file("assets/stock-market-price-chart.mp4")
 # except Exception as e:
 #     st.error(f"Failed to load MP4 file: {e}")
 #     mp4_base64 = ""
-mp4_base64 = ""  # Temporary fallback to avoid path issues on Streamlit Cloud
+mp4_base64 = ""  # Temporary fallback to avoid path issues
 
 # Custom CSS and HTML for Video Background and Adjusted Layout
 common_css = f"""
