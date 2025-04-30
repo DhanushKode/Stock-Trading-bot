@@ -533,13 +533,13 @@ def trading_bot_page():
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-# Load the MP4 file (cached) - Commented out for now due to path issue
+# Load the MP4 file (cached) - Disabled for deployment
 # try:
 #     mp4_base64 = get_base64_of_file(r"C:\Users\HP\Downloads\BOT PROJECT\stock-market-price-chart.mp4")
 # except Exception as e:
 #     st.error(f"Failed to load MP4 file: {e}")
 #     mp4_base64 = ""
-mp4_base64 = ""  # Temporary fallback to avoid path issues
+mp4_base64 = ""  # Temporary fallback to avoid path issues on Streamlit Cloud
 
 # Custom CSS and HTML for Video Background and Adjusted Layout
 common_css = f"""
