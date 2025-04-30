@@ -8,7 +8,7 @@ import time
 
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go  # Ensure this works with requirements.txt
+import plotly.graph_objects as go
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
@@ -386,13 +386,10 @@ def trading_bot_page():
         with col5:
             st.metric("Trade Count", st.session_state.trade_count)
 
-        # Status Log with Scrollable Box and Refresh Button
+        # Status Log with Scrollable Box
         st.subheader("📜 Status Log")
         status_placeholder = st.empty()
-
-        # Refresh Button to Update Status Log
-        if st.button("🔄 Refresh Status Log"):
-            logger.info("Refresh Status Log button clicked")
+        if "status_queue" in st.session_state:
             while not st.session_state.status_queue.empty():
                 status = st.session_state.status_queue.get()
                 st.session_state.status_log.append(status)
@@ -502,45 +499,40 @@ def trading_bot_page():
                     st.session_state.status_queue.put(f"💰 MANUAL BUY: {st.session_state.trade_count} trades | Price: ${current_price:.2f}")
                     st.session_state.trade_history.append((pd.Timestamp.now(), "MANUAL BUY", current_price, trade_qty, 0))
 
-        # Start and Stop Buttons with Persistent Availability
-        col_start_stop = st.columns([1, 1])
-        with col_start_stop[0]:
-            if not st.session_state.is_bot_running and st.button("🚀 Start Trading Bot"):
-                if not st.session_state.bot_event.is_set() and all([alpaca_api_key, alpaca_secret_key, tiingo_api_key]):
-                    logger.info("Start Trading Bot button clicked")
-                    st.session_state.bot_event = threading.Event()
-                    st.session_state.status_queue.queue.clear()
-                    st.session_state.bot_thread = threading.Thread(
-                        target=trading_bot,
-                        args=(st.session_state.status_queue, st.session_state.bot_event, 
-                              alpaca_api_key, alpaca_secret_key, tiingo_api_key, 
-                              stock_symbol, window_size, trade_qty, max_exposure),
-                        daemon=True
-                    )
-                    st.session_state.bot_thread.start()
-                    st.session_state.is_bot_running = True
-                    st.session_state.bot_status = "🟢 Bot Running"
-                    status_placeholder.markdown('<div class="status-box">🚀 Starting trading bot...</div>', unsafe_allow_html=True)
-        with col_start_stop[1]:
-            if st.button("🛑 Stop Trading Bot"):
-                logger.info("Stop Trading Bot button clicked")
-                st.session_state.bot_event.set()
-                if st.session_state.bot_thread:
-                    st.session_state.bot_thread.join(timeout=5)
-                st.session_state.is_bot_running = False
-                st.session_state.bot_status = "🔴 Bot Stopped"
-                status_placeholder.markdown('<div class="status-box">🛑 Trading bot stopped</div>', unsafe_allow_html=True)
+        if not st.session_state.is_bot_running and st.button("🚀 Start Trading Bot"):
+            if not st.session_state.bot_event.is_set() and all([alpaca_api_key, alpaca_secret_key, tiingo_api_key]):
+                logger.info("Start Trading Bot button clicked")
+                st.session_state.bot_event = threading.Event()
+                st.session_state.status_queue.queue.clear()
+                st.session_state.bot_thread = threading.Thread(
+                    target=trading_bot,
+                    args=(st.session_state.status_queue, st.session_state.bot_event, 
+                          alpaca_api_key, alpaca_secret_key, tiingo_api_key, 
+                          stock_symbol, window_size, trade_qty, max_exposure),
+                    daemon=True
+                )
+                st.session_state.bot_thread.start()
+                st.session_state.is_bot_running = True
+                st.session_state.bot_status = "🟢 Bot Running"
+                status_placeholder.markdown('<div class="status-box">🚀 Starting trading bot...</div>', unsafe_allow_html=True)
+
+        if st.button("🛑 Stop Trading Bot"):
+            logger.info("Stop Trading Bot button clicked")
+            st.session_state.bot_event.set()
+            if st.session_state.bot_thread:
+                st.session_state.bot_thread.join(timeout=5)
+            st.session_state.is_bot_running = False
+            st.session_state.bot_status = "🔴 Bot Stopped"
+            status_placeholder.markdown('<div class="status-box">🛑 Trading bot stopped</div>', unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-# Load the MP4 file (cached) - Disabled for deployment due to path issues on Streamlit Cloud
-# To enable, place the MP4 in 'assets/stock-market-price-chart.mp4' and uncomment the below lines
-# try:
-#     mp4_base64 = get_base64_of_file("assets/stock-market-price-chart.mp4")
-# except Exception as e:
-#     st.error(f"Failed to load MP4 file: {e}")
-#     mp4_base64 = ""
-mp4_base64 = ""  # Temporary fallback to avoid path issues
+# Load the MP4 file (cached)
+try:
+    mp4_base64 = get_base64_of_file(r"C:\Users\HP\Downloads\BOT PROJECT\stock-market-price-chart.mp4")
+except Exception as e:
+    st.error(f"Failed to load MP4 file: {e}")
+    mp4_base64 = ""
 
 # Custom CSS and HTML for Video Background and Adjusted Layout
 common_css = f"""
