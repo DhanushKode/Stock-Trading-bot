@@ -12,7 +12,7 @@ import plotly.graph_objects as go  # Depends on 'plotly' in requirements.txt
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
-from alpaca.trading.client import TradingClient
+from alpaca.trading import TradingClient
 from alpaca.trading.enums import OrderSide, TimeInForce
 from alpaca.trading.requests import LimitOrderRequest
 from sklearn.linear_model import LinearRegression
