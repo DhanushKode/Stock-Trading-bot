@@ -2,6 +2,6 @@ streamlit
 numpy
 pandas
 requests
-alpaca-trade-api
+alpaca-py
 scikit-learn
 plotly
