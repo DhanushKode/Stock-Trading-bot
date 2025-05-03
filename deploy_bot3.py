@@ -515,6 +515,7 @@ def trading_bot_page():
 
 # Custom CSS and HTML for Video Background and Adjusted Layout
 common_css = """
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
     <style>
     html, body, [data-testid="stAppViewContainer"] > .stApp {
         margin: 0;
@@ -544,12 +545,12 @@ common_css = """
     h1 {
         color: #FFD700 !important;  /* Gold color for title */
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-        font-family: 'Arial', sans-serif;
+        font-family: 'Source Sans 3', sans-serif;
     }
     h2, h3, p, label, div {
         color: #ffffff !important;
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-        font-family: 'Arial', sans-serif;
+        font-family: 'Source Sans 3', sans-serif;
     }
     .status-box {
         background: rgba(0, 0, 0, 0.7);
@@ -605,7 +606,7 @@ common_css = """
     }
     </style>
     <video autoplay muted loop class="video-background">
-        <source src="https://raw.githubusercontent.com/your-username/stock-trading-bot-assets/main/stock-market-price-chart.mp4" type="video/mp4">
+        <source src="https://github.com/DhanushKode/Stock-Trading-bot/blob/main/project%20backgorund%20.mp4">
         Your browser does not support the video tag.
     </video>
 """
