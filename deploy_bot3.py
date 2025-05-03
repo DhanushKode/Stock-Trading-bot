@@ -9,7 +9,6 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 import streamlit as st
-import streamlit.components.v1 as components
 from alpaca.trading.client import TradingClient
 from alpaca.trading.enums import OrderSide, TimeInForce
 from alpaca.trading.requests import LimitOrderRequest
@@ -311,6 +310,8 @@ def intro_page():
             Click below to proceed to the trading bot and start your journey with personalized settings and real-time trading!
         """)
 
+        st.warning("Note: If you're using an ad blocker or privacy extensions, some analytics features may not work. Consider disabling them for the best experience.")
+
         if st.button("Start Trading Now", key="proceed_button"):
             st.session_state.page = "trading_bot"
             st.session_state.selected_stock = "NVDA"
@@ -606,26 +607,10 @@ common_css = """
     }
     </style>
     <video autoplay muted loop class="video-background">
-        <source src="https://github.com/DhanushKode/Stock-Trading-bot/blob/main/project%20backgorund%20.mp4">
+        <source src="https://raw.githubusercontent.com/DhanushKode/Stock-Trading-bot/main/project%20backgorund.mp4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
 """
-
-# Inject JavaScript to Fix Autocomplete Attributes
-components.html("""
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const passwordInputs = document.querySelectorAll('input[type="password"]');
-        passwordInputs.forEach(input => {
-            input.setAttribute('autocomplete', 'new-password');
-        });
-        const symbolInput = document.querySelector('input[placeholder="Stock Symbol (e.g., AAPL)"]');
-        if (symbolInput) {
-            symbolInput.setAttribute('autocomplete', 'off');
-        }
-    });
-    </script>
-""", height=0)
 
 # Main App Logic
 if "page" not in st.session_state:
