@@ -1,6 +1,4 @@
-import base64
 import logging
-import os
 import queue
 import socket
 import threading
@@ -12,7 +10,7 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
-from alpaca.trading import TradingClient
+from alpaca.trading.client import TradingClient
 from alpaca.trading.enums import OrderSide, TimeInForce
 from alpaca.trading.requests import LimitOrderRequest
 from sklearn.linear_model import LinearRegression
@@ -21,18 +19,6 @@ from sklearn.model_selection import train_test_split
 # Set up logging to debug issues
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Function to get Base64 string from MP4 (with caching) - Disabled for URL approach
-# @st.cache_data
-# def get_base64_of_file(file_path):
-#     try:
-#         with open(file_path, "rb") as video_file:
-#             encoded_string = base64.b64encode(video_file.read()).decode("utf-8")
-#         logger.info("Successfully encoded MP4 to Base64")
-#         return encoded_string
-#     except Exception as e:
-#         logger.error(f"Failed to encode MP4: {e}")
-#         raise
 
 # Fetch Tiingo Data
 def fetch_tiingo_data(symbol, api_key, start_date, end_date):
@@ -118,7 +104,7 @@ def get_current_price(symbol, api_key, secret_key, status_queue, last_price=None
             time.sleep(2 ** attempt)
     return None, last_successful_price
 
-# Place Order - Updated to fix wash trade error by increasing sell price margin
+# Place Order - Optimized for execution
 def place_order(trading_client, symbol, qty, side, limit_price, status_queue):
     if limit_price <= 0:
         status_queue.put(f"❌ Invalid limit price: {limit_price}")
@@ -126,9 +112,9 @@ def place_order(trading_client, symbol, qty, side, limit_price, status_queue):
         return False
     try:
         if side == OrderSide.BUY:
-            limit_price = round(limit_price * 0.998, 2)  # 0.2% below for buy
+            limit_price = round(limit_price * 0.998, 2)
         else:
-            limit_price = round(limit_price * 1.01, 2)  # Increased to 1% above for sell to avoid wash trade
+            limit_price = round(limit_price * 1.002, 2)
         order = LimitOrderRequest(
             symbol=symbol,
             qty=qty,
@@ -386,13 +372,10 @@ def trading_bot_page():
         with col5:
             st.metric("Trade Count", st.session_state.trade_count)
 
-        # Status Log with Scrollable Box and Refresh Button
+        # Status Log with Scrollable Box
         st.subheader("📜 Status Log")
         status_placeholder = st.empty()
-
-        # Refresh Button to Update Status Log
-        if st.button("🔄 Refresh Status Log"):
-            logger.info("Refresh Status Log button clicked")
+        if "status_queue" in st.session_state:
             while not st.session_state.status_queue.empty():
                 status = st.session_state.status_queue.get()
                 st.session_state.status_log.append(status)
@@ -502,47 +485,44 @@ def trading_bot_page():
                     st.session_state.status_queue.put(f"💰 MANUAL BUY: {st.session_state.trade_count} trades | Price: ${current_price:.2f}")
                     st.session_state.trade_history.append((pd.Timestamp.now(), "MANUAL BUY", current_price, trade_qty, 0))
 
-        # Start and Stop Buttons with Persistent Availability
-        col_start_stop = st.columns([1, 1])
-        with col_start_stop[0]:
-            if not st.session_state.is_bot_running and st.button("🚀 Start Trading Bot"):
-                if not st.session_state.bot_event.is_set() and all([alpaca_api_key, alpaca_secret_key, tiingo_api_key]):
-                    logger.info("Start Trading Bot button clicked")
-                    st.session_state.bot_event = threading.Event()
-                    st.session_state.status_queue.queue.clear()
-                    st.session_state.bot_thread = threading.Thread(
-                        target=trading_bot,
-                        args=(st.session_state.status_queue, st.session_state.bot_event, 
-                              alpaca_api_key, alpaca_secret_key, tiingo_api_key, 
-                              stock_symbol, window_size, trade_qty, max_exposure),
-                        daemon=True
-                    )
-                    st.session_state.bot_thread.start()
-                    st.session_state.is_bot_running = True
-                    st.session_state.bot_status = "🟢 Bot Running"
-                    status_placeholder.markdown('<div class="status-box">🚀 Starting trading bot...</div>', unsafe_allow_html=True)
-        with col_start_stop[1]:
-            if st.button("🛑 Stop Trading Bot"):
-                logger.info("Stop Trading Bot button clicked")
-                st.session_state.bot_event.set()
-                if st.session_state.bot_thread:
-                    st.session_state.bot_thread.join(timeout=5)
-                st.session_state.is_bot_running = False
-                st.session_state.bot_status = "🔴 Bot Stopped"
-                status_placeholder.markdown('<div class="status-box">🛑 Trading bot stopped</div>', unsafe_allow_html=True)
+        if not st.session_state.is_bot_running and st.button("🚀 Start Trading Bot"):
+            if not st.session_state.bot_event.is_set() and all([alpaca_api_key, alpaca_secret_key, tiingo_api_key]):
+                logger.info("Start Trading Bot button clicked")
+                st.session_state.bot_event = threading.Event()
+                st.session_state.status_queue.queue.clear()
+                st.session_state.bot_thread = threading.Thread(
+                    target=trading_bot,
+                    args=(st.session_state.status_queue, st.session_state.bot_event, 
+                          alpaca_api_key, alpaca_secret_key, tiingo_api_key, 
+                          stock_symbol, window_size, trade_qty, max_exposure),
+                    daemon=True
+                )
+                st.session_state.bot_thread.start()
+                st.session_state.is_bot_running = True
+                st.session_state.bot_status = "🟢 Bot Running"
+                status_placeholder.markdown('<div class="status-box">🚀 Starting trading bot...</div>', unsafe_allow_html=True)
+
+        if st.button("🛑 Stop Trading Bot"):
+            logger.info("Stop Trading Bot button clicked")
+            st.session_state.bot_event.set()
+            if st.session_state.bot_thread:
+                st.session_state.bot_thread.join(timeout=5)
+            st.session_state.is_bot_running = False
+            st.session_state.bot_status = "🔴 Bot Stopped"
+            status_placeholder.markdown('<div class="status-box">🛑 Trading bot stopped</div>', unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-# Custom CSS and HTML for Video Background - Updated with GitHub URL
-common_css = f"""
+# Custom CSS and HTML for Video Background and Adjusted Layout
+common_css = """
     <style>
-    html, body, [data-testid="stAppViewContainer"] > .stApp {{
+    html, body, [data-testid="stAppViewContainer"] > .stApp {
         margin: 0;
         padding: 0;
         overflow: hidden;
         background: #f4f6f9;  /* Fallback color if video fails */
-    }}
-    .video-background {{
+    }
+    .video-background {
         position: fixed;
         top: 0;
         left: 0;
@@ -551,27 +531,27 @@ common_css = f"""
         object-fit: cover;
         z-index: -1;
         opacity: 0.7;
-    }}
-    [data-testid="stAppViewContainer"] {{
+    }
+    [data-testid="stAppViewContainer"] {
         position: relative;
         z-index: 1;
-    }}
-    .content-container {{
+    }
+    .content-container {
         max-width: 800px;  /* Increased width for better layout */
         margin: 0 auto;
         padding: 30px;
-    }}
-    h1 {{
+    }
+    h1 {
         color: #FFD700 !important;  /* Gold color for title */
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
         font-family: 'Arial', sans-serif;
-    }}
-    h2, h3, p, label, div {{
+    }
+    h2, h3, p, label, div {
         color: #ffffff !important;
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
         font-family: 'Arial', sans-serif;
-    }}
-    .status-box {{
+    }
+    .status-box {
         background: rgba(0, 0, 0, 0.7);
         color: #ffffff !important;
         padding: 15px;
@@ -581,51 +561,51 @@ common_css = f"""
         border: 1px solid #e0e0e0;
         max-height: 200px;  /* Scrollable status box */
         overflow-y: auto;
-    }}
-    .stTextInput > div > input {{
+    }
+    .stTextInput > div > input {
         background-color: rgba(255, 255, 255, 0.9);
         color: #000000 !important;
         border: 1px solid #cccccc;
         border-radius: 5px;
         padding: 8px;
-    }}
-    .stNumberInput > div > input {{
+    }
+    .stNumberInput > div > input {
         background-color: rgba(255, 255, 255, 0.9);
         color: #000000 !important;
         border: 1px solid #cccccc;
         border-radius: 5px;
         padding: 8px;
-    }}
-    .stButton > button:nth-child(1) {{
+    }
+    .stButton > button:nth-child(1) {
         background-color: #2196F3;
         color: #ffffff !important;
         border-radius: 5px;
         padding: 10px 20px;
-    }}
-    .stButton > button:nth-child(1):hover {{
+    }
+    .stButton > button:nth-child(1):hover {
         background-color: #1976D2;
-    }}
-    .stButton > button:nth-child(2) {{
+    }
+    .stButton > button:nth-child(2) {
         background-color: #4CAF50;
         color: #ffffff !important;
         border-radius: 5px;
         padding: 10px 20px;
-    }}
-    .stButton > button:nth-child(2):hover {{
+    }
+    .stButton > button:nth-child(2):hover {
         background-color: #45a049;
-    }}
-    .stButton > button:nth-child(3) {{
+    }
+    .stButton > button:nth-child(3) {
         background-color: #ff0000;
         color: #ffffff !important;
         border-radius: 5px;
         padding: 10px 20px;
-    }}
-    .stButton > button:nth-child(3):hover {{
+    }
+    .stButton > button:nth-child(3):hover {
         background-color: #cc0000;
-    }}
+    }
     </style>
     <video autoplay muted loop class="video-background">
-        <source src="https://raw.githubusercontent.com/your-username/stock-trading-bot/main/assets/stock-market-price-chart.mp4" type="video/mp4">
+        <source src="https://raw.githubusercontent.com/your-username/stock-trading-bot-assets/main/stock-market-price-chart.mp4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
 """
